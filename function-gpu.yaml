@@ -28,7 +28,7 @@ spec:
         - kind: RUN
           value: apt update && apt install --no-install-recommends -y libglib2.0-0
         - kind: RUN
-          value: pip install supervision ultralytics
+          value: pip install supervision ultralytics scikit-image
         - kind: WORKDIR
           value: /opt/nuclio
 
