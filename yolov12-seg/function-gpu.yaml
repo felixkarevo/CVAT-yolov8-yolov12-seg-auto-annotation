@@ -1,0 +1,56 @@
+metadata:
+  name: pth-ultralytics-yolov12-segment
+  namespace: cvat
+  annotations:
+    name: YOLO-v12-Segment
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        {"id": 1, "name": "XYZ"},
+        {"id": 2, "name": "XYZ"},
+        {"id": 3, "name": "XYZ"}
+      ]
+
+spec:
+  description: YOLO v12 Segment via pytorch
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 30s
+  build:
+    image: cvat.pth.ultralytics.yolov12.segment
+    baseImage: nvcr.io/nvidia/pytorch:25.05-py3
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y libglib2.0-0
+        - kind: RUN
+          value: pip install torch supervision scikit-image huggingface_hub
+        - kind: RUN
+          value: pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.4.post1/flash_attn-2.7.4.post1+cu12torch2.3cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+        - kind: RUN
+          value: pip install git+https://github.com/sunsmarterjie/yolov12.git
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

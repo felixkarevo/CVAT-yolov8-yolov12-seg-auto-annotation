@@ -2,7 +2,7 @@ metadata:
   name: pth-ultralytics-yolov8-segment
   namespace: cvat
   annotations:
-    name: YOLO v8 Segment
+    name: YOLO-v8-Segment
     type: detector
     framework: pytorch
     spec: |
