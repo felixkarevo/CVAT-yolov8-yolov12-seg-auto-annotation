@@ -7,14 +7,9 @@ metadata:
     framework: pytorch
     spec: |
       [
-        {"id": 1, "name": "greening"},
-        {"id": 2, "name": "growth_crack"},
-        {"id": 3, "name": "loose_peel"},
-        {"id": 4, "name": "rot"},
-        {"id": 5, "name": "scab"},
-        {"id": 6, "name": "wireworm"},
-        {"id": 7, "name": "mechanical_damage"},
-        {"id": 8, "name": "wet_rot"}
+        {"id": 1, "name": "xyz"},
+        {"id": 2, "name": "xyz"},
+        {"id": 3, "name": "xyz"},
       ]
 
 spec:
