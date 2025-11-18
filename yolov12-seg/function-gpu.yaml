@@ -1,15 +1,20 @@
 metadata:
-  name: pth-ultralytics-yolov12-segment
+  name: yolov12-segment
   namespace: cvat
   annotations:
-    name: YOLO-v12-Segment
+    name: YOLOv12-Segment
     type: detector
     framework: pytorch
     spec: |
       [
-        {"id": 1, "name": "XYZ"},
-        {"id": 2, "name": "XYZ"},
-        {"id": 3, "name": "XYZ"}
+        {"id": 1, "name": "greening"},
+        {"id": 2, "name": "growth_crack"},
+        {"id": 3, "name": "loose_peel"},
+        {"id": 4, "name": "rot"},
+        {"id": 5, "name": "scab"},
+        {"id": 6, "name": "wireworm"},
+        {"id": 7, "name": "mechanical_damage"},
+        {"id": 8, "name": "wet_rot"}
       ]
 
 spec:
@@ -28,11 +33,13 @@ spec:
         - kind: RUN
           value: apt update && apt install --no-install-recommends -y libglib2.0-0
         - kind: RUN
-          value: pip install torch supervision scikit-image huggingface_hub
+          value: pip install torch supervision scikit-image huggingface_hub msgpack nuclio-sdk
         - kind: RUN
           value: pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.4.post1/flash_attn-2.7.4.post1+cu12torch2.3cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
         - kind: RUN
           value: pip install ultralytics@https://github.com/sunsmarterjie/yolov12/archive/refs/tags/seg.tar.gz
+        - kind: RUN
+          value: mkdir -p /opt/nuclio/whl && pip download msgpack -d /opt/nuclio/whl
         - kind: WORKDIR
           value: /opt/nuclio
 
