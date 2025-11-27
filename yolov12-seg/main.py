@@ -22,7 +22,7 @@ def init_context(context):
 
     # Check for custom model or use pretrained model
     # If a custom model file is available, use it, otherwise use a pretrained YOLOv12s-seg
-    model_path = "2ndmodel.pt"
+    model_path = "your-custom-yolov12-seg-model.pt"
     if os.path.exists(model_path):
         context.logger.info(f"Loading custom model from {model_path}")
     else:
