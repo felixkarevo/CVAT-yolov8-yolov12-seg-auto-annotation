@@ -22,7 +22,7 @@ def init_context(context):
 
     # Check for custom model or use pretrained model
     # If a custom model file is available, use it, otherwise use a pretrained YOLOv12s-seg
-    model_path = "your-custom-yolov12-model.pt"
+    model_path = "2ndmodel.pt"
     if os.path.exists(model_path):
         context.logger.info(f"Loading custom model from {model_path}")
     else:
@@ -39,16 +39,26 @@ def init_context(context):
 
 def handler(context, event):
     context.logger.info("Run yolo-v12 model")
-    data = event.body
-    buf = io.BytesIO(base64.b64decode(data["image"]))
-    threshold = float(data.get("threshold", 0.5))
-    context.user_data.model.conf = threshold
-    image = Image.open(buf)
+    try:
+        data = event.body
+        buf = io.BytesIO(base64.b64decode(data["image"]))
+        threshold = float(data.get("threshold", 0.5))
+        context.user_data.model.conf = threshold
+        image = Image.open(buf)
+    except Exception as e:
+        context.logger.error(f"Error processing input: {e}")
+        return context.Response(body=json.dumps([]), headers={},
+                                content_type='application/json', status_code=200)
 
-    yolo_results = context.user_data.model(image, conf=threshold)[0]
-    labels = yolo_results.names
-    detections = sv.Detections.from_ultralytics(yolo_results)
-    detections = detections[detections.confidence > threshold]
+    try:
+        yolo_results = context.user_data.model(image, conf=threshold)[0]
+        labels = yolo_results.names
+        detections = sv.Detections.from_ultralytics(yolo_results)
+        detections = detections[detections.confidence > threshold]
+    except Exception as e:
+        context.logger.error(f"Error running model inference: {e}")
+        return context.Response(body=json.dumps([]), headers={},
+                                content_type='application/json', status_code=200)
 
     results = []
     if len(detections) > 0:
@@ -69,6 +79,10 @@ def handler(context, event):
             cvat_mask = to_cvat_mask((xtl, ytl, xbr, ybr), mask)
 
             contours = find_contours(mask, 0.5)
+            if len(contours) == 0:
+                context.logger.warning(f"No contours found for detection {i}, skipping")
+                continue
+            
             contour = contours[0]
             contour = np.flip(contour, axis=1)
             polygons = approximate_polygon(contour, tolerance=2.5)
