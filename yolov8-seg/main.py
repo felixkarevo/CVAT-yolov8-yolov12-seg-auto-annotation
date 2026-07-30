@@ -45,7 +45,7 @@ def handler(context, event):
     context.user_data.model.conf = threshold
     image = Image.open(buf)
 
-    yolo_results = context.user_data.model(image, conf=threshold)[0]
+    yolo_results = context.user_data.model(image, conf=threshold, imgsz=640, retina_masks=True)[0]
     labels = yolo_results.names
     detections = sv.Detections.from_ultralytics(yolo_results)
     detections = detections[detections.confidence > threshold]
@@ -71,7 +71,7 @@ def handler(context, event):
             contours = find_contours(mask, 0.5)
             contour = contours[0]
             contour = np.flip(contour, axis=1)
-            polygons = approximate_polygon(contour, tolerance=2.5)
+            polygons = approximate_polygon(contour, tolerance=1)
 
             results.append({
                 "confidence": str(confidence),

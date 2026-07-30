@@ -51,7 +51,7 @@ def handler(context, event):
                                 content_type='application/json', status_code=200)
 
     try:
-        yolo_results = context.user_data.model(image, conf=threshold)[0]
+        yolo_results = context.user_data.model(image, conf=threshold, imgsz=640, retina_masks=True)[0]
         labels = yolo_results.names
         detections = sv.Detections.from_ultralytics(yolo_results)
         detections = detections[detections.confidence > threshold]
@@ -85,7 +85,7 @@ def handler(context, event):
             
             contour = contours[0]
             contour = np.flip(contour, axis=1)
-            polygons = approximate_polygon(contour, tolerance=2.5)
+            polygons = approximate_polygon(contour, tolerance=1)
 
             results.append({
                 "confidence": str(confidence),
