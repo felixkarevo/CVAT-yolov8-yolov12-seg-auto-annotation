@@ -53,6 +53,13 @@ def handler(context, event):
     try:
         yolo_results = context.user_data.model(image, conf=threshold, imgsz=640, retina_masks=True)[0]
         labels = yolo_results.names
+        # Normalize labels to always be a dict {class_id: name}
+        if isinstance(labels, (list, tuple)):
+            labels = dict(enumerate(labels))
+        elif not isinstance(labels, dict):
+            context.logger.error(f"Unexpected labels type: {type(labels)}")
+            return context.Response(body=json.dumps([]), headers={},
+                                    content_type='application/json', status_code=200)
         detections = sv.Detections.from_ultralytics(yolo_results)
         detections = detections[detections.confidence > threshold]
     except Exception as e:
@@ -61,39 +68,58 @@ def handler(context, event):
                                 content_type='application/json', status_code=200)
 
     results = []
-    if len(detections) > 0:
-        for i in range(len(detections)):
-            xyxy = detections.xyxy[i]
-            mask = detections.mask[i]
-            confidence = detections.confidence[i]
-            class_id = detections.class_id[i]
+    try:
+        if len(detections) > 0:
+            for i in range(len(detections)):
+                xyxy = detections.xyxy[i]
+                mask = detections.mask[i]
+                confidence = detections.confidence[i]
+                class_id = detections.class_id[i]
 
-            mask = mask.astype(np.uint8)
+                mask = mask.astype(np.uint8)
 
-            xtl = int(xyxy[0])
-            ytl = int(xyxy[1])
-            xbr = int(xyxy[2])
-            ybr = int(xyxy[3])
+                xtl = int(xyxy[0])
+                ytl = int(xyxy[1])
+                xbr = int(xyxy[2])
+                ybr = int(xyxy[3])
 
-            label = int(class_id)
-            cvat_mask = to_cvat_mask((xtl, ytl, xbr, ybr), mask)
+                label = int(class_id)
+                cvat_mask = to_cvat_mask((xtl, ytl, xbr, ybr), mask)
 
-            contours = find_contours(mask, 0.5)
-            if len(contours) == 0:
-                context.logger.warning(f"No contours found for detection {i}, skipping")
-                continue
-            
-            contour = contours[0]
-            contour = np.flip(contour, axis=1)
-            polygons = approximate_polygon(contour, tolerance=1)
+                contours = find_contours(mask, 0.5)
+                if len(contours) == 0:
+                    context.logger.warning(f"No contours found for detection {i}, skipping")
+                    continue
 
-            results.append({
-                "confidence": str(confidence),
-                "label": labels.get(class_id, "unknown"),
-                "type": "mask",
-                "points": polygons.ravel().tolist(),
-                "mask": cvat_mask,
-            })
+                # Pick the longest contour (outer boundary), not just the first one
+                contour = max(contours, key=lambda c: len(c))
+                contour = np.flip(contour, axis=1)
+                polygons = approximate_polygon(contour, tolerance=1)
 
-    return context.Response(body=json.dumps(results), headers={},
+                # A valid polygon needs at least 3 vertices
+                if len(polygons) < 3:
+                    context.logger.warning(
+                        f"Polygon too small ({len(polygons)} vertices) for detection {i}, skipping"
+                    )
+                    continue
+
+                results.append({
+                    "confidence": str(confidence),
+                    "label": labels.get(class_id, "unknown"),
+                    "type": "mask",
+                    "points": polygons.ravel().tolist(),
+                    "mask": cvat_mask,
+                })
+    except Exception as e:
+        context.logger.error(f"Error building results: {e}")
+        # Return empty results on error rather than crashing
+        results = []
+
+    try:
+        response_body = json.dumps(results)
+    except Exception as e:
+        context.logger.error(f"Error serializing results: {e}")
+        response_body = json.dumps([])
+
+    return context.Response(body=response_body, headers={},
                             content_type='application/json', status_code=200)
