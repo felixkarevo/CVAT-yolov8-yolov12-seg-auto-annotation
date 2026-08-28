@@ -1,3 +1,5 @@
+
+
 # CVAT YOLOv8 & YOLOv12 Segmentation Auto-Annotation
 
 Deploy YOLOv8 or YOLOv12 segmentation models as serverless Nuclio functions for automatic annotation in [CVAT](https://www.cvat.ai/).
@@ -183,4 +185,4 @@ Check the [Flash Attention releases page](https://github.com/Dao-AILab/flash-att
 | Missing labels in UI | Placeholder labels in spec | Replace `<XYZ>` with actual class names |
 | GPU not detected | `nvidia-container-toolkit` not installed | `sudo apt install nvidia-container-toolkit` and restart Docker |
 | YOLOv12 inference errors | Python version mismatch | Ensure `function-gpu.yaml` runtime matches the base image's Python |
-| Empty contour for detection | Small or degenerate mask | YOLOv12 handler skips empty contours; YOLOv8 may crash |
+| Empty contour for detection | Small or degenerate mask | Both handlers skip empty contours |
